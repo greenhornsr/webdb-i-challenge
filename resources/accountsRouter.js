@@ -28,7 +28,6 @@ router.get('/:id', (req, res) => {
 
 router.post('/', validateAccount, (req, res) => {
     const newaccount = req.body;
-    console.log(newaccount)
     db.add(newaccount)
     .then(account => {
         res.status(201).json({success: true, message: `New account for ${newaccount.name} has been created!`, account})
@@ -37,6 +36,42 @@ router.post('/', validateAccount, (req, res) => {
         res.status(500).json({success: false, message: 'internal error', err})
     })
 })
+
+router.put('/:id', validateAccountID, (req, res) => {
+    const {id} = req.params;
+    const changes = req.body;
+    db.update(id, changes)
+    .then(updated => {
+        if(updated){
+            res.status(200).json({ success: true, message: `Changes to account with id: ${id} completed successfully!`, changes })
+        }else{
+            res.status(404).json({ success: false, message: 'no account found to update' })
+        }
+    })
+    .catch(err => {
+        console.log(err)
+        res.status(500).json({ success: false, message: 'Server issues...sorry!', err })
+    })
+});
+
+router.delete('/:id', validateAccountID, (req, res, next) => {
+    const accountfound = req.account
+    const {id} = req.params
+    db.remove(id)
+    .then(deleted => {
+        if(deleted) {
+            // res.status(204).end()
+            res.status(204).json({ success: true, message: `Deleted ${accountfound.name}!`, accountfound })
+        } else {
+            res.status(404).json({ success: false, message: "The account with the specified ID does not exist."})
+        }
+    })
+    .catch(err => {
+        console.log(err)
+        res.status(500).json({ success: false, message: "The action could not be removed", err })
+    })
+})
+
 
 // middleware
 function validateAccount(req, res, next) {
@@ -48,5 +83,22 @@ function validateAccount(req, res, next) {
         next();
     }
 }
+
+function validateAccountID(req, res, next) {
+        // console.log(req.params)
+        db.find(req.params.id)
+        .then(account => {
+            if(account){ 
+            req.account = account
+            next()
+            }else{
+                res.status(400).json({ message: 'Invalid account id!' })
+            }
+        })
+        .catch(err => {
+            console.log(err)
+            res.status(500).json({ message: 'unknown server error validating id', err })
+        })
+    } 
 
 module.exports = router; 
