@@ -19,5 +19,16 @@ server.get('/accounts', (req, res) => {
     })
 })
 
+server.get('/accounts/:id', (req, res) => {
+    const { id } = req.params
+    db.findById(id)
+    .then(account => {
+        res.status(200).json({success: true, account})
+    })
+    .catch(err => {
+        res.status(400).json({success: false, message: 'no account found', err })
+    })
+})
+
 
 module.exports = server;
